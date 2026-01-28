@@ -29,7 +29,6 @@ func main() {
 		} else {
 			errCount = 0
 		}
-
 		time.Sleep(pollInterval)
 	}
 }
@@ -55,7 +54,6 @@ func fetchAndProcess(client *http.Client) error {
 		return fmt.Errorf("invalid stats format")
 	}
 
-	// парсим все значения
 	load := parseInt(parts[0])
 	memTotal := parseInt(parts[1])
 	memUsed := parseInt(parts[2])
@@ -64,29 +62,29 @@ func fetchAndProcess(client *http.Client) error {
 	netTotal := parseInt(parts[5])
 	netUsed := parseInt(parts[6])
 
-	// 1. Disk
-	diskLimit := diskTotal * 90 / 100
-	if diskUsed > diskLimit {
-		diskLeft := (diskTotal - diskUsed) / (1024 * 1024) // MiB
-		fmt.Printf("Free disk space is too low: %d Mb left\n", diskLeft)
+	// 🔹 Network
+	netLimit := netTotal * 90 / 100
+	if netUsed > netLimit {
+		netLeft := (netTotal - netUsed) / 1_000_000
+		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", netLeft)
 	}
 
-	// 2. Load Average
+	// 🔹 Load Average
 	if load > 30 {
 		fmt.Printf("Load Average is too high: %d\n", load)
 	}
 
-	// 3. Memory
+	// 🔹 Memory
 	memPercent := memUsed * 100 / memTotal
 	if memPercent > 80 {
 		fmt.Printf("Memory usage too high: %d%%\n", memPercent)
 	}
 
-	// 4. Network
-	netLimit := netTotal * 90 / 100
-	if netUsed > netLimit {
-		netLeft := (netTotal - netUsed) / 1_000_000 // Mbit/s
-		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", netLeft)
+	// 🔹 Disk
+	diskLimit := diskTotal * 90 / 100
+	if diskUsed > diskLimit {
+		diskLeft := (diskTotal - diskUsed) / (1024 * 1024) // MiB
+		fmt.Printf("Free disk space is too low: %d Mb left\n", diskLeft)
 	}
 
 	return nil
