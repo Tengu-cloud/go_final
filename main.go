@@ -10,33 +10,30 @@ import (
 )
 
 const (
-	url           = "http://srv.msk01.gigacorp.local/_stats"
-	pollInterval  = 10 * time.Second
-	maxErrorCount = 3
+	url          = "http://srv.msk01.gigacorp.local/_stats"
+	pollInterval = 10 * time.Second
+	maxErrCount  = 3
 )
 
 func main() {
-	errorCount := 0
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
+	client := &http.Client{Timeout: 5 * time.Second}
+	errCount := 0
 
 	for {
-		err := fetchAndProcessStats(client)
-		if err != nil {
-			errorCount++
-			if errorCount >= maxErrorCount {
+		if err := fetchAndProcess(client); err != nil {
+			errCount++
+			if errCount >= maxErrCount {
 				fmt.Println("Unable to fetch server statistic.")
 			}
 		} else {
-			errorCount = 0
+			errCount = 0
 		}
 
 		time.Sleep(pollInterval)
 	}
 }
 
-func fetchAndProcessStats(client *http.Client) error {
+func fetchAndProcess(client *http.Client) error {
 	resp, err := client.Get(url)
 	if err != nil {
 		return err
@@ -44,7 +41,7 @@ func fetchAndProcessStats(client *http.Client) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("non-200 status")
+		return fmt.Errorf("bad status")
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -54,52 +51,51 @@ func fetchAndProcessStats(client *http.Client) error {
 
 	parts := strings.Split(strings.TrimSpace(string(body)), ",")
 	if len(parts) != 7 {
-		return fmt.Errorf("invalid stats format")
+		return fmt.Errorf("bad format")
 	}
 
-	values := make([]uint64, 7)
+	vals := make([]uint64, 7)
 	for i, p := range parts {
 		v, err := strconv.ParseUint(strings.TrimSpace(p), 10, 64)
 		if err != nil {
 			return err
 		}
-		values[i] = v
+		vals[i] = v
 	}
 
-	loadAvg := values[0]
-	memTotal := values[1]
-	memUsed := values[2]
-	diskTotal := values[3]
-	diskUsed := values[4]
-	netTotal := values[5]
-	netUsed := values[6]
+	load := vals[0]
+	memTotal := vals[1]
+	memUsed := vals[2]
+	diskTotal := vals[3]
+	diskUsed := vals[4]
+	netTotal := vals[5]
+	netUsed := vals[6]
 
 	// Load Average
-	if loadAvg > 30 {
-		fmt.Printf("Load Average is too high: %d\n", loadAvg)
+	if load > 30 {
+		fmt.Printf("Load Average is too high: %d\n", load)
 	}
 
-	// Memory usage (%)
-	memUsagePercent := (memUsed * 100) / memTotal
-	if memUsagePercent > 80 {
-		fmt.Printf("Memory usage too high: %d%%\n", memUsagePercent)
+	// Memory
+	memPercent := memUsed * 100 / memTotal
+	if memPercent > 80 {
+		fmt.Printf("Memory usage too high: %d%%\n", memPercent)
 	}
 
-	// Disk space (MB = 1_000_000 bytes)
-	diskUsagePercent := (diskUsed * 100) / diskTotal
-	if diskUsagePercent > 90 {
-		freeDiskMB := (diskTotal - diskUsed) / 1_000_000
-		fmt.Printf("Free disk space is too low: %d Mb left\n", freeDiskMB)
+	// Disk (90% limit, decimal MB)
+	diskLimit := diskTotal * 90 / 100
+	if diskUsed > diskLimit {
+		left := diskTotal - diskUsed
+		mbLeft := left / 1_000_000
+		fmt.Printf("Free disk space is too low: %d Mb left\n", mbLeft)
 	}
 
-	// Network bandwidth (Mbit = 1_000_000 bits)
-	netUsagePercent := (netUsed * 100) / netTotal
-	if netUsagePercent > 90 {
-		netFreeMbit := ((netTotal - netUsed) * 8) / 1_000_000
-		fmt.Printf(
-			"Network bandwidth usage high: %d Mbit/s available\n",
-			netFreeMbit,
-		)
+	// Network (90% limit, decimal Mbit)
+	netLimit := netTotal * 90 / 100
+	if netUsed > netLimit {
+		left := netTotal - netUsed
+		mbitLeft := (left * 8) / 1_000_000
+		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", mbitLeft)
 	}
 
 	return nil
