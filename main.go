@@ -57,9 +57,9 @@ func fetchAndProcessStats(client *http.Client) error {
 		return fmt.Errorf("invalid stats format")
 	}
 
-	values := make([]float64, 7)
+	values := make([]uint64, 7)
 	for i, p := range parts {
-		v, err := strconv.ParseFloat(strings.TrimSpace(p), 64)
+		v, err := strconv.ParseUint(strings.TrimSpace(p), 10, 64)
 		if err != nil {
 			return err
 		}
@@ -76,27 +76,28 @@ func fetchAndProcessStats(client *http.Client) error {
 
 	// Load Average
 	if loadAvg > 30 {
-		fmt.Printf("Load Average is too high: %d\n", int(loadAvg))
+		fmt.Printf("Load Average is too high: %d\n", loadAvg)
 	}
 
-	// Memory usage
+	// Memory usage (%)
 	memUsagePercent := (memUsed * 100) / memTotal
 	if memUsagePercent > 80 {
-		fmt.Printf("Memory usage too high: %.0f%%\n", memUsagePercent)
+		fmt.Printf("Memory usage too high: %d%%\n", memUsagePercent)
 	}
 
-	// Disk space
-	freeDiskMB := (diskTotal - diskUsed) / (1024 * 1024)
-	diskUsagePercent := (diskUsed / diskTotal) * 100
+	// Disk space (MB = 1_000_000 bytes)
+	diskUsagePercent := (diskUsed * 100) / diskTotal
 	if diskUsagePercent > 90 {
-		fmt.Printf("Free disk space is too low: %.0f Mb left\n", freeDiskMB)
+		freeDiskMB := (diskTotal - diskUsed) / 1_000_000
+		fmt.Printf("Free disk space is too low: %d Mb left\n", freeDiskMB)
 	}
 
-	// Network bandwidth
-	netFreeMbit := ((netTotal - netUsed) * 8) / (1024 * 1024)
-	if netUsed > netTotal*0.9 {
+	// Network bandwidth (Mbit = 1_000_000 bits)
+	netUsagePercent := (netUsed * 100) / netTotal
+	if netUsagePercent > 90 {
+		netFreeMbit := ((netTotal - netUsed) * 8) / 1_000_000
 		fmt.Printf(
-			"Network bandwidth usage high: %.0f Mbit/s available\n",
+			"Network bandwidth usage high: %d Mbit/s available\n",
 			netFreeMbit,
 		)
 	}
