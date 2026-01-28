@@ -86,7 +86,7 @@ func fetchAndProcess(client *http.Client) error {
 	diskLimit := diskTotal * 90 / 100
 	if diskUsed > diskLimit {
 		left := diskTotal - diskUsed
-		mbLeft := left / 1_000_000
+		mbLeft := left / (1024 * 1024)
 		fmt.Printf("Free disk space is too low: %d Mb left\n", mbLeft)
 	}
 
@@ -94,7 +94,7 @@ func fetchAndProcess(client *http.Client) error {
 	netLimit := netTotal * 90 / 100
 	if netUsed > netLimit {
 		left := netTotal - netUsed
-		mbitLeft := (left * 8) / 1_000_000
+		mbitLeft := left / (1024 * 1024)
 		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", mbitLeft)
 	}
 
