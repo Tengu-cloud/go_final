@@ -71,31 +71,29 @@ func fetchAndProcess(client *http.Client) error {
 	netTotal := vals[5]
 	netUsed := vals[6]
 
-	// Load Average
-	if load > 30 {
-		fmt.Printf("Load Average is too high: %d\n", load)
-	}
-
 	// Memory
 	memPercent := memUsed * 100 / memTotal
 	if memPercent > 80 {
 		fmt.Printf("Memory usage too high: %d%%\n", memPercent)
 	}
 
-	// Disk (90% limit, decimal MB)
+	// Disk
 	diskLimit := diskTotal * 90 / 100
 	if diskUsed > diskLimit {
-		left := diskTotal - diskUsed
-		mbLeft := left / (1024 * 1024)
-		fmt.Printf("Free disk space is too low: %d Mb left\n", mbLeft)
+		diskLeft := (diskTotal - diskUsed) / (1024 * 1024)
+		fmt.Printf("Free disk space is too low: %d Mb left\n", diskLeft)
 	}
 
-	// Network (90% limit, decimal Mbit)
+	// Network
 	netLimit := netTotal * 90 / 100
 	if netUsed > netLimit {
-		left := netTotal - netUsed
-		mbitLeft := left / (1024 * 1024)
-		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", mbitLeft)
+		netLeft := (netTotal - netUsed) / (1024 * 1024)
+		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", netLeft)
+	}
+
+	// Load Average
+	if load > 30 {
+		fmt.Printf("Load Average is too high: %d\n", load)
 	}
 
 	return nil
