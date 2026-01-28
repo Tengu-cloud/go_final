@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	url            = "http://srv.msk01.gigacorp.local/_stats"
-	pollInterval   = 10 * time.Second
-	maxErrorCount  = 3
+	url           = "http://srv.msk01.gigacorp.local/_stats"
+	pollInterval  = 10 * time.Second
+	maxErrorCount = 3
 )
 
 func main() {
@@ -76,7 +76,7 @@ func fetchAndProcessStats(client *http.Client) error {
 
 	// Load Average
 	if loadAvg > 30 {
-		fmt.Printf("Load Average is too high: %.2f\n", loadAvg)
+		fmt.Printf("Load Average is too high: %.0f\n", loadAvg)
 	}
 
 	// Memory usage
@@ -96,11 +96,12 @@ func fetchAndProcessStats(client *http.Client) error {
 	// Network bandwidth
 	netFreeBytes := netTotal - netUsed
 	netFreeMbit := (netFreeBytes * 8) / (1024 * 1024)
-	netUsagePercent := (netUsed / netTotal) * 100
-	if netUsagePercent > 90 {
-		fmt.Printf("Network bandwidth usage high: %.0f Mbit/s available\n", netFreeMbit)
+	if netUsed > netTotal*0.9 {
+		fmt.Printf(
+			"Network bandwidth usage high: %.0f Mbit/s available\n",
+			netFreeMbit,
+		)
 	}
 
 	return nil
 }
-
