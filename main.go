@@ -41,7 +41,7 @@ func fetchAndProcess(client *http.Client) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("bad status")
+		return fmt.Errorf("bad status: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -63,8 +63,7 @@ func fetchAndProcess(client *http.Client) error {
 	netUsed := parseInt(parts[6])
 
 	// 🔹 Network
-	netLimit := netTotal * 90 / 100
-	if netUsed > netLimit {
+	if netUsed*100/netTotal > 90 {
 		netLeft := (netTotal - netUsed) / 1_000_000
 		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", netLeft)
 	}
@@ -75,14 +74,13 @@ func fetchAndProcess(client *http.Client) error {
 	}
 
 	// 🔹 Memory
-	memPercent := memUsed * 100 / memTotal
+	memPercent := int(float32(memUsed) / float32(memTotal) * 100)
 	if memPercent > 80 {
 		fmt.Printf("Memory usage too high: %d%%\n", memPercent)
 	}
 
 	// 🔹 Disk
-	diskLimit := diskTotal * 90 / 100
-	if diskUsed > diskLimit {
+	if diskUsed*100/diskTotal > 90 {
 		diskLeft := (diskTotal - diskUsed) / (1024 * 1024) // MiB
 		fmt.Printf("Free disk space is too low: %d Mb left\n", diskLeft)
 	}
