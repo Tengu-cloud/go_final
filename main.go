@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -54,6 +55,7 @@ func fetchAndProcess(client *http.Client) error {
 		return fmt.Errorf("invalid stats format")
 	}
 
+	// парсим все значения
 	load := parseInt(parts[0])
 	memTotal := parseInt(parts[1])
 	memUsed := parseInt(parts[2])
@@ -65,7 +67,7 @@ func fetchAndProcess(client *http.Client) error {
 	// 1. Disk
 	diskLimit := diskTotal * 90 / 100
 	if diskUsed > diskLimit {
-		diskLeft := (diskTotal - diskUsed) / (1024 * 1024)
+		diskLeft := (diskTotal - diskUsed) / (1024 * 1024) // MiB
 		fmt.Printf("Free disk space is too low: %d Mb left\n", diskLeft)
 	}
 
@@ -83,9 +85,14 @@ func fetchAndProcess(client *http.Client) error {
 	// 4. Network
 	netLimit := netTotal * 90 / 100
 	if netUsed > netLimit {
-		netLeft := (netTotal - netUsed) / 1_000_000
+		netLeft := (netTotal - netUsed) / 1_000_000 // Mbit/s
 		fmt.Printf("Network bandwidth usage high: %d Mbit/s available\n", netLeft)
 	}
 
 	return nil
+}
+
+func parseInt(s string) int64 {
+	n, _ := strconv.ParseInt(strings.TrimSpace(s), 10, 64)
+	return n
 }
